@@ -22,16 +22,21 @@ typedef struct {
   CellChaine *chaines;          /* La liste chainee des chaines */
 } Chaines;
 
-void inserer_point_en_tete(CellPoint* liste_points, double x, double y);
-void inserer_chaine_en_tete(CellChaine* liste_chaine, int numero, CellPoint* liste_points);
+CellPoint* creer_point(double x, double y);
+CellChaine* creer_chaine(int numero, CellPoint* liste_points);
+void inserer_point_en_tete(CellPoint** liste_points, double x, double y);
+void inserer_chaine_en_tete(CellChaine** liste_chaine, int numero, CellPoint* liste_points);
 void liberer_points(CellPoint* points);
 void liberer_chaine(CellChaine* chaine);
 void liberer_liste_chaines(Chaines* liste_chaines);
+void afficher_points(CellPoint* liste_points);
+void afficher_chaine(CellChaine* liste_chaine);
 
 Chaines* lectureChaines(FILE *f);
 void ecrireChaines(Chaines *C, FILE *f);
 void afficheChainesSVG(Chaines *C, char* nomInstance);
 double longueurTotale(Chaines *C);
 int comptePointsTotal(Chaines *C);
+
 
 #endif
