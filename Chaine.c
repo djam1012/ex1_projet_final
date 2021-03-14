@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,11 +35,9 @@ void inserer_chaine_en_tete(CellChaine** liste_chaine, int numero, CellPoint* li
   nouv->points=liste_points;
   if (*liste_chaine==NULL){
     *liste_chaine=nouv;
-    printf("fait1\n");
   } else {
     nouv->suiv=*liste_chaine;
     *liste_chaine=nouv;
-    printf("fait2\n");
   }
 }
 
@@ -102,27 +99,37 @@ void afficher_chaine(CellChaine* liste_chaine){
   printf("\n");
 }
 
+void afficher_liste_chaines(Chaines* liste_chaines){
+  if (!liste_chaines){
+    printf("Les chaines sont vides.\n");
+    return;
+  }
+  printf("Gamma: %d Nombre de chaines: %d Liste des chaines:\n", liste_chaines->gamma, liste_chaines->nbChaines);
+  afficher_chaine(liste_chaines->chaines);
+}
+
 void liberer_liste_chaines(Chaines* liste_chaines){
   if (!liste_chaines){
     printf("Impossible de libérer une liste de liste de chaines vide.\n");
     return;
   }
   liberer_chaine(liste_chaines->chaines);
+  free(liste_chaines);
 }
 
 Chaines* lectureChaines(FILE *f){
   // on alloue les structures nécessaires
   Chaines* liste_chaines=(Chaines*)malloc(sizeof(Chaines));
-  CellChaine* chaine;
-  CellPoint* point;
+  CellChaine** chaine=(CellChaine**)malloc(sizeof(CellChaine*));
 
   // on crée les variables temporaires permettant de lire chaque donnée du fichier
   char x[10]; // abcisse
   char y[10]; // ordonnée
-  char gamma[10];
-  char nbChaines[10];
+  char gamma[10]; // gamma
+  char nbChaines[10]; // nombre de chaines
   char ligne[256]; // ligne à lire dans le fichier
-  int num_ligne=0;
+  int num_ligne=0; // numero de la ligne
+  int premier_point=0; // teste si le point à insérer est le premier, alors il crée un nouveau point
 
   while(f){
     for (int c=0; c<10; c++){
@@ -147,68 +154,68 @@ Chaines* lectureChaines(FILE *f){
       continue; // on ignore le saut de ligne de la ligne 2 sinon la boucle s'arrête
     }
     else {
-      int a_o=0; // 0 = on lit une abcisse, 1 = on lit une ordonnée
       int nb_pts=atoi(&ligne[2]); // nombre de coordonnées à lire dans la ligne
       int j=4; // caractère à partir duquel on commence à lire des points
-      int lire_nb_pts=0; // savoir si on passe à la chaine suivante si on atteint ce nombre
+      int lire_nb_pts=0; // on passe à la chaine suivante si on atteint le nombre de points à lire
+      CellPoint** point=(CellPoint**)malloc(sizeof(CellPoint*));
 
       while(ligne){ // lecture de 1 ligne
-        int premier_point=0; // teste si le point à insérer est le premier, alors il crée un nouveau point
 
-        if (feof(f)) return NULL; // condition_sortie doit etre egal a la somme de tous les nb de pts de chaque ligne moins le nombre de chaines
-        for (int c=0; c<10; c++){
+        if (feof(f)) break; // condition pour sortir de la boucle car ça ne marche pas lorsqu'on le met pas (boucle infinie)
+        for (int c=0; c<10; c++){// on les réinitialise quand on passe au point suivant
             x[c]='\0';
-            y[c]='\0'; // on les réinitialise quand on passe au point suivant
+            y[c]='\0';
         }
         int lire_pts=0; // on lit chaque caractère de l'abcisse ou de l'ordonnée
+
         while(ligne[j]!=' '&&ligne[j]!='\0'&&ligne[j]!='\n'){
           strncat(x, &ligne[j], 1);
           j++;
         }
-        if (ligne[j]!='\0')j++;
+        if (ligne[j]!='\0')j++; // on incrémente encore une fois pour ignorer les espaces
 
         while(ligne[j]!=' '&&ligne[j]!='\0'&&ligne[j]!='\n'){
           strncat(y, &ligne[j], 1);
           j++;
         }
         if (ligne[j]!='\0')j++;
-        printf("%s\n", x);
-        printf("%s\n", y);
-        printf("\n");
 
         if (premier_point==0){
-          point=creer_point(atof(x), atof(y));
+          *point=creer_point(atof(x), atof(y));
           premier_point=1;
-        } else inserer_point_en_tete(&point, atof(x), atof(y));
-        afficher_points(point);
+        } else inserer_point_en_tete(point, atof(x), atof(y));
 
         lire_nb_pts++;
-        if (lire_nb_pts==nb_pts) break; // on peut couper la boucle lorsqu'on a lu le nombre de points qu'on voulait
+        if (lire_nb_pts==nb_pts) { // on peut couper la boucle lorsqu'on a lu le nombre de points qu'on voulait
+          inserer_chaine_en_tete(chaine, atoi(&ligne[0]), *point);
+          break;
+        }
         if (ligne[j]=='\0') break; // ou lorsque la fin de la ligne est atteinte mais cette seule condition n'est pas efficace
 
       }
       char numero[10];
       strncat(numero, &ligne[0], 10);
-      inserer_chaine_en_tete(&chaine, atoi(numero), point);
     }
+    if(feof(f)) break;
   }
-  liste_chaines->chaines=chaine;
+  liste_chaines->chaines=*chaine;
   return liste_chaines;
 }
 
 int main(int argc, char const *argv[]) {
-  /*FILE* fic ;
+  FILE* fic ;
   fic=fopen(argv[1],"r");
   if (!fic){
     printf("Problème lors de la lecture du fichier\n");
     return 1;
   }
-  printf("fichier lu avec succès\n");
+  printf("fichier ouvert avec succès\n\n");
   Chaines* ch1 = lectureChaines(fic);
+  afficher_liste_chaines(ch1);
   fclose(fic);
-  liberer_liste_chaines(ch1);*/
+  liberer_liste_chaines(ch1);
 
-  CellPoint** pointeur_liste_points;
+  /*CellPoint** pointeur_liste_points;
   pointeur_liste_points=(CellPoint**)malloc(sizeof(CellPoint*));
   CellPoint* liste_points=creer_point(9.88,71.19);
   *pointeur_liste_points=liste_points;
@@ -233,13 +240,14 @@ int main(int argc, char const *argv[]) {
   inserer_chaine_en_tete(pointeur_liste_chaine, 10, *pointeur_liste_points);
   afficher_chaine(*pointeur_liste_chaine);
 
+  Chaines* chaine
 
   liberer_chaine(*pointeur_liste_chaine);
   free(pointeur_liste_chaine);
   //liberer_points(*pointeur_liste_points);
   free(pointeur_liste_points);
   //liberer_points(*pointeur_liste_points_2);
-  free(pointeur_liste_points_2);
+  free(pointeur_liste_points_2);*/
 
   return 0;
 }
