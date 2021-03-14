@@ -125,11 +125,13 @@ Chaines* lectureChaines(FILE *f){
   // on crée les variables temporaires permettant de lire chaque donnée du fichier
   char x[10]; // abcisse
   char y[10]; // ordonnée
+  char numero[10]; // numero de la chaine
   char gamma[10]; // gamma
   char nbChaines[10]; // nombre de chaines
   char ligne[256]; // ligne à lire dans le fichier
   int num_ligne=0; // numero de la ligne
   int premier_point=0; // teste si le point à insérer est le premier, alors il crée un nouveau point
+  int premiere_chaine=0;
 
   while(f){
     for (int c=0; c<10; c++){
@@ -157,7 +159,7 @@ Chaines* lectureChaines(FILE *f){
       int nb_pts=atoi(&ligne[2]); // nombre de coordonnées à lire dans la ligne
       int j=4; // caractère à partir duquel on commence à lire des points
       int lire_nb_pts=0; // on passe à la chaine suivante si on atteint le nombre de points à lire
-      CellPoint** point=(CellPoint**)malloc(sizeof(CellPoint*));
+      CellPoint** point=(CellPoint**)calloc(1,sizeof(CellPoint*));
 
       while(ligne){ // lecture de 1 ligne
 
@@ -186,19 +188,26 @@ Chaines* lectureChaines(FILE *f){
         } else inserer_point_en_tete(point, atof(x), atof(y));
 
         lire_nb_pts++;
+
         if (lire_nb_pts==nb_pts) { // on peut couper la boucle lorsqu'on a lu le nombre de points qu'on voulait
-          inserer_chaine_en_tete(chaine, atoi(&ligne[0]), *point);
+          for (int c=0; c<10; c++){// on réinitialise quand on passe au numero suivant
+              numero[c]='\0';
+          }
+          strncat(numero, &ligne[0], 10);
+          if (premiere_chaine==0){
+            *chaine=creer_chaine(atoi(numero), *point);
+            premiere_chaine=1;
+          } else inserer_chaine_en_tete(chaine, atoi(numero), *point);
           break;
         }
         if (ligne[j]=='\0') break; // ou lorsque la fin de la ligne est atteinte mais cette seule condition n'est pas efficace
-
       }
-      char numero[10];
-      strncat(numero, &ligne[0], 10);
+      free(point);
     }
     if(feof(f)) break;
   }
   liste_chaines->chaines=*chaine;
+  free(chaine);
   return liste_chaines;
 }
 
@@ -211,8 +220,7 @@ int main(int argc, char const *argv[]) {
   }
   printf("fichier ouvert avec succès\n\n");
   Chaines** pointeur_chaines=(Chaines**)malloc(sizeof(Chaines*));
-  Chaines* ch1 = lectureChaines(fic);
-  *pointeur_chaines=ch1;
+  *pointeur_chaines = lectureChaines(fic);
   afficher_liste_chaines(*pointeur_chaines);
   liberer_liste_chaines(*pointeur_chaines);
   free(pointeur_chaines);
