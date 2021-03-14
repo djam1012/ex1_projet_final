@@ -104,13 +104,13 @@ void afficher_liste_chaines(Chaines* liste_chaines){
     printf("Les chaines sont vides.\n");
     return;
   }
-  printf("Gamma: %d Nombre de chaines: %d Liste des chaines:\n", liste_chaines->gamma, liste_chaines->nbChaines);
+  printf("Gamma: %d, Nombre de chaines: %d, Liste des chaines:\n", liste_chaines->gamma, liste_chaines->nbChaines);
   afficher_chaine(liste_chaines->chaines);
 }
 
 void liberer_liste_chaines(Chaines* liste_chaines){
   if (!liste_chaines){
-    printf("Impossible de libérer une liste de liste de chaines vide.\n");
+    printf("Les chaines sont vides.\n");
     return;
   }
   liberer_chaine(liste_chaines->chaines);
@@ -210,10 +210,14 @@ int main(int argc, char const *argv[]) {
     return 1;
   }
   printf("fichier ouvert avec succès\n\n");
+  Chaines** pointeur_chaines=(Chaines**)malloc(sizeof(Chaines*));
   Chaines* ch1 = lectureChaines(fic);
-  afficher_liste_chaines(ch1);
+  *pointeur_chaines=ch1;
+  afficher_liste_chaines(*pointeur_chaines);
+  liberer_liste_chaines(*pointeur_chaines);
+  free(pointeur_chaines);
   fclose(fic);
-  liberer_liste_chaines(ch1);
+
 
   /*CellPoint** pointeur_liste_points;
   pointeur_liste_points=(CellPoint**)malloc(sizeof(CellPoint*));
@@ -236,13 +240,20 @@ int main(int argc, char const *argv[]) {
   pointeur_liste_chaine=(CellChaine**)malloc(sizeof(CellChaine*));
   CellChaine* liste_chaine=creer_chaine(15, *pointeur_liste_points_2);
   *pointeur_liste_chaine=liste_chaine;
-  afficher_chaine(*pointeur_liste_chaine);
   inserer_chaine_en_tete(pointeur_liste_chaine, 10, *pointeur_liste_points);
   afficher_chaine(*pointeur_liste_chaine);
 
-  Chaines* chaine
+  Chaines** pointeur_chaines=(Chaines**)malloc(sizeof(Chaines*));
+  Chaines* liste_chaines=(Chaines*)malloc(sizeof(Chaines));
+  liste_chaines->gamma=5;
+  liste_chaines->nbChaines=2;
+  *pointeur_chaines=liste_chaines;
+  (*pointeur_chaines)->chaines=*pointeur_liste_chaine;
+  afficher_liste_chaines(*pointeur_chaines);
 
-  liberer_chaine(*pointeur_liste_chaine);
+  liberer_liste_chaines(liste_chaines);
+  free(pointeur_chaines);
+  //liberer_chaine(*pointeur_liste_chaine);
   free(pointeur_liste_chaine);
   //liberer_points(*pointeur_liste_points);
   free(pointeur_liste_points);
