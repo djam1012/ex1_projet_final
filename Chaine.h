@@ -31,6 +31,7 @@ void liberer_chaine(CellChaine* chaine);
 void liberer_liste_chaines(Chaines* liste_chaines);
 void afficher_points(CellPoint* liste_points);
 void afficher_chaine(CellChaine* liste_chaine);
+void afficher_liste_chaines(Chaines* liste_chaines);
 
 Chaines* lectureChaines(FILE *f);
 void ecrireChaines(Chaines *C, FILE *f);
