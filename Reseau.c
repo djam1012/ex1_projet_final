@@ -1,48 +1,109 @@
+#include "Reseau.h"
+#include "Chaine.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "Chaine.h"
-#include "SVGwriter.h"
 
-int main(int argc, char const *argv[]) {
-  if (argc!=2){
-    printf("Il faut un seul fichier d'entrée et un seul entier > 0.\n");
-    return 1;
+Noeud * creer_noeud(int num, double x, double y){
+  Noeud * n = (Noeud *) malloc(sizeof(Noeud));
+  n->num=num;
+  n->x=x;
+  n->y=y;
+  n->voisins=NULL;
+  return n;
+}
+
+void inserer_noeud_en_tete(Reseau** R, Noeud* n){
+  CellNoeud * nouv=R->noeuds->nd;
+  if (R->noeuds->nd==NULL){
+    R->noeuds->nd=nouv;
+  } else {
+    nouv->suiv=R->noeuds->nd;
+    R->noeuds->nd=nouv;
   }
+}
 
-  // test de la fonction lectureChaines
-  FILE* fic ;
-  fic=fopen(argv[1],"r");
-  if (!fic){
-    printf("Problème lors de la lecture du fichier\n");
-    return 1;
+CellCommodite creer_commodite(Noeud* extrA, Noeud* extrB){
+  CellCommodite* com = (CellCommodite *) malloc(sizeof(CellCommodite));
+  com->extrA=extrA;
+  com->extrB=extrB;
+  com->suiv=NULL;
+}
+
+void inserer_com_en_tete(Reseau** R, CellCommodite* com){
+  CellCommodite* nouv=R->commodites;
+  if (R->commodites==NULL){
+    R->commodites=nouv;
+  } else {
+    nouv->suiv=R->commodites;
+    R->commodites=nouv;
   }
-  printf("fichier ouvert avec succès\n\n");
-  Chaines** pointeur_chaines=(Chaines**)malloc(sizeof(Chaines*));
-  *pointeur_chaines = lectureChaines(fic);
+}
 
-  // test de la fonction ecrireChaines
-  FILE* fic2;
-  fic2=fopen("ecrireChaines1.cha", "w");
-  if (!fic2){
-    printf("Problème lors de la lecture du fichier\n");
-    fclose(fic2);
-    return 1;
+Reseau * creer_reseau(int nbNoeuds, int gamma, CellNoeud* noeuds, CellCommodite* commodites){
+  Reseau * r= (Reseau *) malloc(sizeof(Reseau));
+  r->gamma=gamma;
+  r->nbNoeuds=nbNoeuds;
+  r->noeuds=noeuds;
+  r->commodites=commodites;
+  return r;
+}
+
+Noeud* rechercheCreeNoeudListe(Reseau *R, double x, double y){
+  CellNoeud* cell_noeud = R->noeuds;
+  Noeud* nouv = NULL;
+  int found=0;
+  while (cell_noeud->suiv != NULL){
+    if (cell_noeud->nd->x == x && cell_noeud->nd->y == y){
+      found++;
+      return cell_noeud;
+    }
+    cell_noeud=cell_noeud->suiv;
   }
-  printf("fichier ouvert avec succès\n\n");
+  nouv=creer_noeud(R->nbNoeuds+1,x,y);
+  R->nbNoeuds++;
+  inserer_noeud_en_tete(*R,nouv);
+  return nouv;
+}
 
-  ecrireChaines(*pointeur_chaines, fic2); // le fichier sera fermé dans le fonction
-  afficher_liste_chaines(*pointeur_chaines);
+Reseau* reconstitueReseauListe(Chaines *C){
+  Reseau res;
 
-  afficheChainesSVG(*pointeur_chaines, "chaines1");
-  printf("longueur totale %f\n", longueurTotale(*pointeur_chaines));
-  printf("nombre de total de points %d\n", comptePointsTotal(*pointeur_chaines));
+  return res;
+}
 
+void afficher_noeud(Noeud * n){
+  printf("Noeud numéro %d: (%lf, %lf)\n", n->num, n->x, n->y);
+}
 
-  liberer_liste_chaines(*pointeur_chaines);
-  free(pointeur_chaines);
-  fclose(fic);
-  fclose(fic2);
+void afficher_commodite(CellCommmodite * n){
+  printf("Commodité de noeuds:\n");
+  printf("\t");
+  afficher_noeud(n->extrA);
+  printf("\n");
+  printf("\t");
+  afficher_noeud(n->extrB);
+}
+
+void afficher_reseau(Reseau * r){
+  printf("Voici le réseau de %d noeuds et de gamma %d:\n", r->nbNoeuds, r->gamma);
+  printf("\n");
+  printf("La liste des noeuds du réseau est:\n");
+  CellNoeud noeud_cour=r->noeuds; // on crée un noeud courant pour ne pas fausser la liste de noeuds
+  while (r->noeuds->suiv != NULL){
+    afficher_noeud(noeud_cour);
+    noeud_cour=noeud_cour->suiv;
+  }
+  printf("\n");
+  printf("La liste des commodités du réseau est:\n");
+  CellCommodite com_cour=r->commodites;
+  while (com_cour->suiv != NULL){
+    afficher_commodite(com_cour);
+    com_cour=com_cour->suiv;
+  }
+}
+
+int main(){
 
   return 0;
 }
