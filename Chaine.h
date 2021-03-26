@@ -1,6 +1,7 @@
 #ifndef __CHAINE_H__
 #define __CHAINE_H__
 #include <stdio.h>
+#include "SVGwriter.h"
 
 /* Liste chainee de points */
 typedef struct cellPoint{
@@ -32,10 +33,12 @@ void liberer_liste_chaines(Chaines* liste_chaines);
 void afficher_points(CellPoint* liste_points);
 void afficher_chaine(CellChaine* liste_chaine);
 void afficher_liste_chaines(Chaines* liste_chaines);
+int compter_points_chaine(CellChaine* liste_chaine);
 
 Chaines* lectureChaines(FILE *f);
 void ecrireChaines(Chaines *C, FILE *f);
 void afficheChainesSVG(Chaines *C, char* nomInstance);
+double longueurChaine (CellChaine * c );
 double longueurTotale(Chaines *C);
 int comptePointsTotal(Chaines *C);
 
