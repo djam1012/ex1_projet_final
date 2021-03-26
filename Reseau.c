@@ -51,7 +51,8 @@ Reseau * creer_reseau(int nbNoeuds, int gamma, CellNoeud* noeuds, CellCommodite*
 
 Noeud* rechercheCreeNoeudListe(Reseau *R, double x, double y){
   CellNoeud* cell_noeud = R->noeuds;
-  Noeud* nouv = NULL;
+  Noeud* nouv;
+  CellCommodite com_nouv;
   int found=0;
   while (cell_noeud->suiv != NULL){
     if (cell_noeud->nd->x == x && cell_noeud->nd->y == y){
@@ -67,8 +68,14 @@ Noeud* rechercheCreeNoeudListe(Reseau *R, double x, double y){
 }
 
 Reseau* reconstitueReseauListe(Chaines *C){
-  Reseau res;
-
+  Reseau res=creer_reseau(0, C->gamma, NULL, NULL);
+  CellChaine chaine_cour=C->chaines;
+  while(chaine_cour){
+    CellPoint point_cour=chaine_cour->points;
+    while (point_cour){
+      rechercheCreeNoeudListe(res, point_cour->x, point_cour->y);
+    }
+  }
   return res;
 }
 
