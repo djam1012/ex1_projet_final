@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "Chaine.h"
+#include "SVGwriter.h"
+#include <math.h>
 
 CellPoint* creer_point(double x, double y){
   CellPoint* nouv=(CellPoint*)malloc(sizeof(CellPoint));
@@ -117,6 +119,21 @@ void liberer_liste_chaines(Chaines* liste_chaines){
   free(liste_chaines);
 }
 
+int compter_points_chaine(CellChaine* liste_chaine){
+  int nb_points=0;
+  if (!liste_chaine){
+    printf("La liste de chaines est vide.\n");
+    return 0;
+  }
+  CellPoint* points_cour=liste_chaine->points;
+  while(points_cour){
+    nb_points++;
+    if(liste_chaine->points->suiv==NULL) return 0;
+    points_cour=points_cour->suiv;
+  }
+  return nb_points;
+}
+
 Chaines* lectureChaines(FILE *f){
   // on alloue les structures nécessaires
   Chaines* liste_chaines=(Chaines*)malloc(sizeof(Chaines));
@@ -131,7 +148,7 @@ Chaines* lectureChaines(FILE *f){
   char ligne[256]; // ligne à lire dans le fichier
   int num_ligne=0; // numero de la ligne
   int premier_point=0; // teste si le point à insérer est le premier, alors il crée un nouveau point
-  int premiere_chaine=0;
+  int premiere_chaine=0; // teste si la chaine à insérer est la première
 
   while(f){
     for (int c=0; c<10; c++){
@@ -168,7 +185,7 @@ Chaines* lectureChaines(FILE *f){
             x[c]='\0';
             y[c]='\0';
         }
-        int lire_pts=0; // on lit chaque caractère de l'abcisse ou de l'ordonnée
+
 
         while(ligne[j]!=' '&&ligne[j]!='\0'&&ligne[j]!='\n'){
           strncat(x, &ligne[j], 1);
@@ -200,7 +217,7 @@ Chaines* lectureChaines(FILE *f){
           } else inserer_chaine_en_tete(chaine, atoi(numero), *point);
           break;
         }
-        if (ligne[j]=='\0') break; // ou lorsque la fin de la ligne est atteinte mais cette seule condition n'est pas efficace
+        if (ligne[j]=='\0') break; // ou lorsque la fin de la ligne est atteinte
       }
       free(point);
     }
@@ -211,62 +228,110 @@ Chaines* lectureChaines(FILE *f){
   return liste_chaines;
 }
 
-int main(int argc, char const *argv[]) {
-  FILE* fic ;
-  fic=fopen(argv[1],"r");
-  if (!fic){
-    printf("Problème lors de la lecture du fichier\n");
-    return 1;
+void ecrireChaines(Chaines *C, FILE *f){
+
+  // on vérifie que la structure ou les chaines qu'elle contient ne sont pas vides
+  if (!C&&!C->chaines){
+    printf("La chaine est vide, on ne peut pas la parcourir.\n");
+    return;
   }
-  printf("fichier ouvert avec succès\n\n");
-  Chaines** pointeur_chaines=(Chaines**)malloc(sizeof(Chaines*));
-  *pointeur_chaines = lectureChaines(fic);
-  afficher_liste_chaines(*pointeur_chaines);
-  liberer_liste_chaines(*pointeur_chaines);
-  free(pointeur_chaines);
-  fclose(fic);
+  // on écrit le gamma et le nombre de chaines
+  fprintf(f,"NbChain: %d\nGamma: %d\n\n",C->nbChaines,C->gamma);
 
+  // on écrit le numero des chaines, leur nombre de points puis le leurs points
+  CellChaine* chaine_cour=C->chaines;
+  while(chaine_cour){
+    fprintf(f, "%d %d", chaine_cour->numero, compter_points_chaine(chaine_cour));
+    CellPoint* point_cour=chaine_cour->points;
+    while(point_cour){
+      fprintf(f, " %.2f %.2f", point_cour->x, point_cour->y); // on laisse un espace en plus au debut pour ajouter le nombre de points
+      point_cour=point_cour->suiv;
+    }
+    fprintf(f, "\n");
+    if(C->chaines->suiv==NULL){
+      return;
+    }
+    chaine_cour=chaine_cour->suiv;
+  }
 
-  /*CellPoint** pointeur_liste_points;
-  pointeur_liste_points=(CellPoint**)malloc(sizeof(CellPoint*));
-  CellPoint* liste_points=creer_point(9.88,71.19);
-  *pointeur_liste_points=liste_points;
-  inserer_point_en_tete(pointeur_liste_points, 45.2, 2.125);
-  inserer_point_en_tete(pointeur_liste_points, 456.2, 2.4852);
-  afficher_points(*pointeur_liste_points);
+}
 
+void afficheChainesSVG(Chaines *C, char* nomInstance){
+    int i;
+    double maxx=0,maxy=0,minx=1e6,miny=1e6;
+    CellChaine *ccour;
+    CellPoint *pcour;
+    double precx,precy;
+    SVGwriter svg;
+    ccour=C->chaines;
+    while (ccour!=NULL){
+        pcour=ccour->points;
+        while (pcour!=NULL){
+            if (maxx<pcour->x) maxx=pcour->x;
+            if (maxy<pcour->y) maxy=pcour->y;
+            if (minx>pcour->x) minx=pcour->x;
+            if (miny>pcour->y) miny=pcour->y;
+            pcour=pcour->suiv;
+        }
+    ccour=ccour->suiv;
+    }
+    SVGinit(&svg,nomInstance,500,500);
+    ccour=C->chaines;
+    while (ccour!=NULL){
+        pcour=ccour->points;
+        SVGlineRandColor(&svg);
+        SVGpoint(&svg,500*(pcour->x-minx)/(maxx-minx),500*(pcour->y-miny)/(maxy-miny));
+        precx=pcour->x;
+        precy=pcour->y;
+        pcour=pcour->suiv;
+        while (pcour!=NULL){
+            SVGline(&svg,500*(precx-minx)/(maxx-minx),500*(precy-miny)/(maxy-miny),500*(pcour->x-minx)/(maxx-minx),500*(pcour->y-miny)/(maxy-miny));
+            SVGpoint(&svg,500*(pcour->x-minx)/(maxx-minx),500*(pcour->y-miny)/(maxy-miny));
+            precx=pcour->x;
+            precy=pcour->y;
+            pcour=pcour->suiv;
+        }
+        ccour=ccour->suiv;
+    }
+    SVGfinalize(&svg);
+}
 
-  CellPoint** pointeur_liste_points_2;
-  pointeur_liste_points_2=(CellPoint**)malloc(sizeof(CellPoint*));
-  CellPoint* liste_points_2=creer_point(3.33,25.8);
-  *pointeur_liste_points_2=liste_points_2;
-  inserer_point_en_tete(pointeur_liste_points_2, 52.8, 2.0);
-  inserer_point_en_tete(pointeur_liste_points_2, 17.2, 12.9);
-  afficher_points(*pointeur_liste_points_2);
+double longueurChaine (CellChaine * c ){
+  CellPoint * p = c->points->suiv;
+  CellPoint* prec= c->points;
+  double l=0;
+  while(p->suiv != NULL){
+    l=l+ sqrt(((p->x)-(prec->x))*((p->x)-(prec->x))+ ((p->y)-(prec->y))*((p->y)-(prec->y)));
+    prec=p;
+    p=p->suiv;
+  }
+  l=l+ sqrt(((p->x)-(c->points->x))*((p->x)-(c->points->x))+ ((p->y)-(c->points->y))*((p->y)-(c->points->y)));
+  return l;
+}
 
-  CellChaine** pointeur_liste_chaine;
-  pointeur_liste_chaine=(CellChaine**)malloc(sizeof(CellChaine*));
-  CellChaine* liste_chaine=creer_chaine(15, *pointeur_liste_points_2);
-  *pointeur_liste_chaine=liste_chaine;
-  inserer_chaine_en_tete(pointeur_liste_chaine, 10, *pointeur_liste_points);
-  afficher_chaine(*pointeur_liste_chaine);
+double longueurTotale(Chaines *C){
+  int i=0;
+  double S = 0;
 
-  Chaines** pointeur_chaines=(Chaines**)malloc(sizeof(Chaines*));
-  Chaines* liste_chaines=(Chaines*)malloc(sizeof(Chaines));
-  liste_chaines->gamma=5;
-  liste_chaines->nbChaines=2;
-  *pointeur_chaines=liste_chaines;
-  (*pointeur_chaines)->chaines=*pointeur_liste_chaine;
-  afficher_liste_chaines(*pointeur_chaines);
+  CellChaine * p = C->chaines ;
 
-  liberer_liste_chaines(liste_chaines);
-  free(pointeur_chaines);
-  //liberer_chaine(*pointeur_liste_chaine);
-  free(pointeur_liste_chaine);
-  //liberer_points(*pointeur_liste_points);
-  free(pointeur_liste_points);
-  //liberer_points(*pointeur_liste_points_2);
-  free(pointeur_liste_points_2);*/
+  for(i=0;i<C->nbChaines;i++){
+    S=S+longueurChaine(p);
+    p=p->suiv;
+  }
 
-  return 0;
+  return S;
+}
+
+int comptePointsTotal(Chaines * C){
+  int i=0;
+  int S=0;
+  CellChaine * p = C->chaines ;
+  for(i=0;i<C->nbChaines;i++){
+    S=S+compter_points_chaine(p);
+    p=p->suiv;
+
+  }
+
+  return S;
 }
