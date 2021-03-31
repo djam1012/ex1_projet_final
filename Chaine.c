@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "Chaine.h"
-#include "SVGwriter.h"
 #include <math.h>
 
 CellPoint* creer_point(double x, double y){
@@ -312,14 +311,11 @@ double longueurChaine (CellChaine * c ){
 double longueurTotale(Chaines *C){
   int i=0;
   double S = 0;
-
   CellChaine * p = C->chaines ;
-
   for(i=0;i<C->nbChaines;i++){
     S=S+longueurChaine(p);
     p=p->suiv;
   }
-
   return S;
 }
 
@@ -330,8 +326,6 @@ int comptePointsTotal(Chaines * C){
   for(i=0;i<C->nbChaines;i++){
     S=S+compter_points_chaine(p);
     p=p->suiv;
-
   }
-
   return S;
 }
