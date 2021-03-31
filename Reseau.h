@@ -1,6 +1,7 @@
 #ifndef __RESEAU_H__
 #define __RESEAU_H__
 #include "Chaine.h"
+#include "SVGwriter.h"
 
 typedef struct noeud Noeud;
 
@@ -13,7 +14,7 @@ typedef struct cellnoeud {
 /* Noeud du reseau */
 struct noeud{
    int num;                        /* Numero du noeud */
-   double x, y;                    /* Coordonnees du noeud*/
+   double x, y;                    /* Coordonnees du noeud */
    CellNoeud *voisins;             /* Liste des voisins du noeud */
 };
 
@@ -31,14 +32,15 @@ typedef struct {
     CellCommodite *commodites;     /* Liste des commodites a relier */
 } Reseau;
 
-void inserer_noeud_en_tete (Reseau * R, Noeud * n);
+void inserer_noeud_en_tete(CellNoeud* liste_noeud, int num, double x, double y);
 Noeud * creer_noeud(int num, double x, double y);
-void inserer_com_en_tete (Reseau * R, CellCommodite * com);
-CellCommodite creer_commodite(Noeud* extrA, Noeud* extrB);
+void inserer_com_en_tete (CellCommodite* liste_com, Noeud* extrA, Noeud* extrB);
+CellCommodite* creer_commodite(Noeud* extrA, Noeud* extrB);
 Reseau * creer_reseau(int nbNoeuds, int gamma, CellNoeud* noeuds, CellCommodite* commodites);
 void afficher_noeud(Noeud * n);
-void afficher_commodite(CellCommmodite * n);
+void afficher_commodite(CellCommodite * n);
 void afficher_reseau(Reseau * r);
+void ajouter_voisin_en_tete(Noeud* noeud, CellNoeud* voisin);
 
 Noeud* rechercheCreeNoeudListe(Reseau *R, double x, double y);
 Reseau* reconstitueReseauListe(Chaines *C);
