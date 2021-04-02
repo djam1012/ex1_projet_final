@@ -35,6 +35,7 @@ int main(int argc, char const *argv[]) {
   ecrireChaines(*pointeur_chaines, fic2); // le fichier sera fermé dans le fonction
 
   Reseau* R = reconstitueReseauListe(*pointeur_chaines);
+  afficher_reseau(R);
 
   liberer_liste_chaines(*pointeur_chaines);
   free(pointeur_chaines);
