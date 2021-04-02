@@ -32,13 +32,15 @@ typedef struct {
     CellCommodite *commodites;     /* Liste des commodites a relier */
 } Reseau;
 
-void inserer_noeud_en_tete(CellNoeud* liste_noeud, int num, double x, double y);
+void inserer_noeud_en_tete(CellNoeud** liste_noeud, int num, double x, double y);
 Noeud * creer_noeud(int num, double x, double y);
 void inserer_com_en_tete (CellCommodite* liste_com, Noeud* extrA, Noeud* extrB);
 CellCommodite* creer_commodite(Noeud* extrA, Noeud* extrB);
 Reseau * creer_reseau(int nbNoeuds, int gamma, CellNoeud* noeuds, CellCommodite* commodites);
 void afficher_noeud(Noeud * n);
-void afficher_commodite(CellCommodite * n);
+void afficher_liste_noeuds(CellNoeud* cn);
+void afficher_voisins(Noeud* n);
+void afficher_commodite(CellCommodite * c);
 void afficher_reseau(Reseau * r);
 void ajouter_voisin_en_tete(Noeud* noeud, CellNoeud* voisin);
 
