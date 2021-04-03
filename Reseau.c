@@ -232,3 +232,41 @@ int nbCommodites(Reseau* R){
   }
   return res;
 }
+
+void inserer_CellNoeud_en_tete(CellNoeud* cn1, CellNoeud* cn2){
+  if (cn1==NULL){
+    cn1=cn2;
+  } else {
+    cn2->suiv=cn1;
+    cn1=cn2;
+  }
+}
+
+CellNoeud* voisins_total(Reseau* R){
+  CellNoeud* res;
+  CellNoeud* cour=R->noeuds;
+  while(cour->suiv){
+    CellNoeud* voisins_temp=cour->nd->voisins;
+    while(voisins_temp){
+      inserer_CellNoeud_en_tete(res, voisins_temp);
+      voisins_temp=voisins_temp->suiv;
+    }
+    cour=cour->suiv;
+  }
+}
+
+int nbLiaisons(Reseau* R){
+  int res=0;
+  CellNoeud* parcourir=voisins_total(R);
+  CellNoeud* temp=parcourir;
+  while (temp->suiv){
+    CellNoeud* comparer=temp;
+    while(comparer->suiv){
+      if (temp->nd->num==comparer->nd->num) break;
+      res++;
+      comparer=comparer->suiv;
+    }
+    temp=temp->suiv;
+  }
+  return res;
+}
