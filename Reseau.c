@@ -13,6 +13,13 @@ Noeud * creer_noeud(int num, double x, double y){
   return n;
 }
 
+CellNoeud* creer_CellNoeud(Noeud* n){
+  CellNoeud *cn = (CellNoeud*)malloc(sizeof(CellNoeud));
+  cn->nd = n;
+  cn->suiv = NULL;
+  return cn;
+}
+
 void inserer_noeud_en_tete(CellNoeud** liste_noeud, int num, double x, double y){
   CellNoeud* nouv=(CellNoeud*)malloc(sizeof(CellNoeud));
   nouv->nd=creer_noeud(num, x, y);
@@ -26,17 +33,35 @@ void inserer_noeud_en_tete(CellNoeud** liste_noeud, int num, double x, double y)
 
 void ajouter_voisin_en_queue(Noeud* noeud, CellNoeud* voisin){
   if (!noeud) return;
-  if (!voisin) return;
+  if (!voisin->nd) return;
   CellNoeud* nouv=voisin;
   CellNoeud* temp=noeud->voisins;
+  if (!temp){
+    temp=nouv;
+    afficher_noeud(temp->nd);
+    afficher_noeud(voisin->nd);
+    return;
+  }
   while(temp){
-    if (temp->nd->x == nouv->nd->x && temp->nd->y == nouv->nd->y){
+    if (temp->nd->num == nouv->nd->num){
       return;
     }
     temp=temp->suiv;
   }
-  nouv->suiv=temp;
-  temp=nouv;
+  temp->suiv=nouv;
+}
+
+void ajouter_voisin_noeud(Noeud* n1, Noeud* n2){
+  if(!n2) return;
+  if(!n1) n1 = n2;
+  CellNoeud *temp = n1->voisins;
+  CellNoeud* temp2 = n1->voisins;
+  while(temp2){
+    if (temp2->nd->num==n2->num) return;
+    temp2=temp2->suiv;
+  }
+  n1->voisins = creer_CellNoeud(n2);
+  n1->voisins->suiv = temp;
 }
 
 CellCommodite* creer_commodite(Noeud* extrA, Noeud* extrB){
@@ -100,10 +125,9 @@ void afficher_voisins(Noeud* n){
 
 void afficher_voisins_reseau(Reseau* R){
   CellNoeud* cour=R->noeuds;
-  int i=0;
-  while(cour){
+  while(cour->suiv){
+    printf("                  VOISINS de ");
     afficher_noeud(cour->nd);
-    printf("A POUR VOISINS :\n");
     afficher_voisins(cour->nd);
     cour=cour->suiv;
   }
@@ -161,33 +185,40 @@ Noeud* rechercheCreeNoeudListe(Reseau *R, double x, double y){
 }
 
 Reseau* reconstitueReseauListe(Chaines *C){
+
   CellNoeud* noeuds=(CellNoeud*)calloc(1,sizeof(CellNoeud));
   CellCommodite** commodites=(CellCommodite**)calloc(1,sizeof(CellCommodite*));
   *commodites=(CellCommodite*)calloc(1,sizeof(CellCommodite));
   Reseau* res=creer_reseau(0, C->gamma, noeuds, *commodites);
   CellChaine* chaine_cour=C->chaines;
+
   while(chaine_cour){
     CellPoint* point_cour=chaine_cour->points;
     CellNoeud* noeud=(CellNoeud*)calloc(1,sizeof(CellNoeud));
-    CellNoeud* noeud_prec=(CellNoeud*)calloc(1,sizeof(CellNoeud));
     CellNoeud* premier_noeud=(CellNoeud*)calloc(1,sizeof(CellNoeud)); // premier noeud de la chaine
     CellNoeud* dernier_noeud=(CellNoeud*)calloc(1,sizeof(CellNoeud)); // dernier noeud de la chaine
+    CellNoeud* suiv=(CellNoeud*)calloc(1,sizeof(CellNoeud));
     int i=1;
+
     while (point_cour){
-      int nb_noeuds=res->nbNoeuds;
       noeud->nd=rechercheCreeNoeudListe(res, point_cour->x, point_cour->y);
-      if (i==1) premier_noeud->nd=noeud->nd;
-      if (i==compter_points_chaine(chaine_cour)) dernier_noeud->nd=noeud->nd;
+      if (point_cour->suiv) suiv->nd=rechercheCreeNoeudListe(res, point_cour->suiv->x, point_cour->suiv->y);
+      noeud->suiv=suiv;
+
+      if (i==1) premier_noeud=noeud;
+      if (!noeud->suiv) dernier_noeud=noeud;
+
+      printf("                    FEOSIFISEFJEFJ\n");
+
       // ajout du précédent et du suivant de chaque noeud pour les voisins
-      if (noeud && noeud_prec){
-        ajouter_voisin_en_queue(noeud->nd, noeud_prec);
-        ajouter_voisin_en_queue(noeud_prec->nd, noeud);
+      if (suiv && noeud && suiv->nd->num!=noeud->nd->num){
+        afficher_noeud(noeud->nd);
+        afficher_noeud(suiv->nd);
+        printf("VOISIN 1 SENS\n");
+        ajouter_voisin_noeud(suiv->nd, noeud->nd);
+        printf("VOISIN 2 SENS\n");
+        ajouter_voisin_noeud(noeud->nd, suiv->nd);
       }
-      if (noeud && noeud->suiv){
-        ajouter_voisin_en_queue(noeud->nd, noeud->suiv);
-        ajouter_voisin_en_queue(noeud->suiv->nd, noeud);
-      }
-      noeud_prec=noeud;
       point_cour=point_cour->suiv;
       i++;
     }
