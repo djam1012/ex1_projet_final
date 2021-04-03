@@ -193,6 +193,7 @@ Reseau* reconstitueReseauListe(Chaines *C){
   CellChaine* chaine_cour=C->chaines;
 
   while(chaine_cour){
+    int nb_points=compter_points_chaine(chaine_cour);
     CellPoint* point_cour=chaine_cour->points;
     CellNoeud* noeud=(CellNoeud*)calloc(1,sizeof(CellNoeud));
     CellNoeud* premier_noeud=(CellNoeud*)calloc(1,sizeof(CellNoeud)); // premier noeud de la chaine
@@ -205,18 +206,12 @@ Reseau* reconstitueReseauListe(Chaines *C){
       if (point_cour->suiv) suiv->nd=rechercheCreeNoeudListe(res, point_cour->suiv->x, point_cour->suiv->y);
       noeud->suiv=suiv;
 
-      if (i==1) premier_noeud=noeud;
-      if (!noeud->suiv) dernier_noeud=noeud;
-
-      printf("                    FEOSIFISEFJEFJ\n");
+      if (i==1) premier_noeud->nd=noeud->nd;
+      if (i==nb_points) dernier_noeud->nd=noeud->nd;
 
       // ajout du précédent et du suivant de chaque noeud pour les voisins
       if (suiv && noeud && suiv->nd->num!=noeud->nd->num){
-        afficher_noeud(noeud->nd);
-        afficher_noeud(suiv->nd);
-        printf("VOISIN 1 SENS\n");
         ajouter_voisin_noeud(suiv->nd, noeud->nd);
-        printf("VOISIN 2 SENS\n");
         ajouter_voisin_noeud(noeud->nd, suiv->nd);
       }
       point_cour=point_cour->suiv;
@@ -224,6 +219,16 @@ Reseau* reconstitueReseauListe(Chaines *C){
     }
     inserer_com_en_tete(&(res->commodites), premier_noeud->nd, dernier_noeud->nd);
     chaine_cour=chaine_cour->suiv;
+  }
+  return res;
+}
+
+int nbCommodites(Reseau* R){
+  int res=0;
+  CellCommodite* temp=R->commodites;
+  while (temp->suiv){
+    res++;
+    temp=temp->suiv;
   }
   return res;
 }
