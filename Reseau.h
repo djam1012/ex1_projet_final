@@ -39,6 +39,7 @@ CellCommodite* creer_commodite(Noeud* extrA, Noeud* extrB);
 Reseau * creer_reseau(int nbNoeuds, int gamma, CellNoeud* noeuds, CellCommodite* commodites);
 CellNoeud* creer_CellNoeud(Noeud* n);
 void ajouter_voisin_noeud(Noeud* n1, Noeud* n2);
+int recherche_noeud_liste(CellNoeud *liste_noeud, Noeud *n);
 void afficher_noeud(Noeud * n);
 void afficher_liste_noeuds(CellNoeud* cn);
 void afficher_voisins(Noeud* n);
