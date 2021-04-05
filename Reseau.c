@@ -64,6 +64,16 @@ void ajouter_voisin_noeud(Noeud* n1, Noeud* n2){
   n1->voisins->suiv = temp;
 }
 
+int recherche_noeud_liste(CellNoeud* liste_noeud, Noeud* n){
+  if (liste_noeud==NULL) return 0;
+  if (n==NULL) return 0;
+  while(liste_noeud){
+    if (liste_noeud->nd->num==n->num) return 1;
+    liste_noeud=liste_noeud->suiv;
+  }
+  return 0;
+}
+
 CellCommodite* creer_commodite(Noeud* extrA, Noeud* extrB){
   CellCommodite* com = (CellCommodite *) malloc(sizeof(CellCommodite));
   com->extrA=extrA;
@@ -124,9 +134,10 @@ void afficher_voisins(Noeud* n){
 }
 
 void afficher_voisins_reseau(Reseau* R){
+  printf("LISTE DES VOISINS DU RESEAU\n");
   CellNoeud* cour=R->noeuds;
   while(cour->suiv){
-    printf("                  VOISINS de ");
+    printf("                VOISINS DE ");
     afficher_noeud(cour->nd);
     afficher_voisins(cour->nd);
     cour=cour->suiv;
@@ -211,8 +222,10 @@ Reseau* reconstitueReseauListe(Chaines *C){
 
       // ajout du précédent et du suivant de chaque noeud pour les voisins
       if (suiv && noeud && suiv->nd->num!=noeud->nd->num){
-        ajouter_voisin_noeud(suiv->nd, noeud->nd);
-        ajouter_voisin_noeud(noeud->nd, suiv->nd);
+        if(!recherche_noeud_liste(noeud->nd->voisins,suiv->nd))
+          ajouter_voisin_noeud(suiv->nd, noeud->nd);
+        if(!recherche_noeud_liste(suiv->nd->voisins, noeud->nd))
+          ajouter_voisin_noeud(noeud->nd, suiv->nd);
       }
       point_cour=point_cour->suiv;
       i++;
@@ -233,40 +246,90 @@ int nbCommodites(Reseau* R){
   return res;
 }
 
-void inserer_CellNoeud_en_tete(CellNoeud* cn1, CellNoeud* cn2){
-  if (cn1==NULL){
-    cn1=cn2;
-  } else {
-    cn2->suiv=cn1;
-    cn1=cn2;
-  }
-}
-
-CellNoeud* voisins_total(Reseau* R){
-  CellNoeud* res;
-  CellNoeud* cour=R->noeuds;
-  while(cour->suiv){
-    CellNoeud* voisins_temp=cour->nd->voisins;
-    while(voisins_temp){
-      inserer_CellNoeud_en_tete(res, voisins_temp);
-      voisins_temp=voisins_temp->suiv;
-    }
-    cour=cour->suiv;
-  }
-}
-
 int nbLiaisons(Reseau* R){
+  if(!R) return 0;
+  if(!R->nbNoeuds) return 0;
   int res=0;
-  CellNoeud* parcourir=voisins_total(R);
-  CellNoeud* temp=parcourir;
-  while (temp->suiv){
-    CellNoeud* comparer=temp;
-    while(comparer->suiv){
-      if (temp->nd->num==comparer->nd->num) break;
+  CellNoeud* temp=R->noeuds;
+  CellNoeud* deja_vu;
+  while(temp->nd){
+    inserer_noeud_en_tete(&deja_vu, temp->nd->num, temp->nd->x, temp->nd->y);
+    CellNoeud* voisin=temp->nd->voisins;
+    while(voisin){
       res++;
-      comparer=comparer->suiv;
+      voisin=voisin->suiv;
     }
     temp=temp->suiv;
   }
   return res;
+}
+
+void ecrireReseau(Reseau* R, FILE* f){
+  f=fopen("Reseau1.res", "w");
+  if (!f){
+    printf("Problème lors de la lecture du fichier\n");
+    fclose(f);
+    return;
+  }
+  fprintf(f, "NbNoeuds: %d\nNbLiaisons: %d\nNbCommodites: %d\nGamma: %d\n\n",
+          R->nbNoeuds, nbLiaisons(R), nbCommodites(R), R->gamma);
+  int i=0;
+  CellNoeud* noeud_temp=R->noeuds;
+  while (i<R->nbNoeuds){
+    fprintf(f, "v %d %.2f %.2f\n", noeud_temp->nd->num, noeud_temp->nd->x, noeud_temp->nd->y);
+    noeud_temp=noeud_temp->suiv;
+    i++;
+  }
+  fprintf(f, "\n");
+  CellNoeud* cour=R->noeuds;
+  CellNoeud* liste_noeud;
+  while(cour->suiv){
+    Noeud* noeud_cour=cour->nd;
+    inserer_noeud_en_tete(&liste_noeud, noeud_cour->num, noeud_cour->x, noeud_cour->y);
+    CellNoeud* voisin=cour->nd->voisins;
+    while(voisin){
+      if(recherche_noeud_liste(cour->nd->voisins,voisin->nd))
+        fprintf(f, "l %d %d\n", noeud_cour->num, voisin->nd->num);
+      voisin=voisin->suiv;
+    }
+    cour=cour->suiv;
+  }
+  fprintf(f, "\n");
+  i=0;
+  CellCommodite* com_temp=R->commodites;
+  while (i<nbCommodites(R)){
+    fprintf(f, "k %d %d\n", com_temp->extrA->num, com_temp->extrB->num);
+    com_temp=com_temp->suiv;
+    i++;
+  }
+  fclose(f);
+}
+
+void afficheReseauSVG(Reseau* R, char* nomInstance){
+    int i;
+    double maxx=0,maxy=0,minx=1e6,miny=1e6;
+    CellNoeud *ncour=R->noeuds;
+    SVGwriter svg;
+    while (ncour->suiv){
+      if (maxx<ncour->nd->x) maxx=ncour->nd->x;
+      if (maxy<ncour->nd->y) maxy=ncour->nd->y;
+      if (minx>ncour->nd->x) minx=ncour->nd->x;
+      if (miny>ncour->nd->y) miny=ncour->nd->y;
+      ncour=ncour->suiv;
+    }
+    SVGinit(&svg,nomInstance,500,500);
+    ncour=R->noeuds;
+    while (ncour->suiv){
+      SVGpoint(&svg,500*(ncour->nd->x-minx)/(maxx-minx),500*(ncour->nd->y-miny)/(maxy-miny));
+      ncour=ncour->suiv;
+      CellNoeud* vcour=ncour->nd->voisins;
+      while (vcour){
+        SVGlineRandColor(&svg);
+        SVGpoint(&svg,500*(ncour->nd->x-minx)/(maxx-minx),500*(ncour->nd->y-miny)/(maxy-miny));
+        SVGline(&svg,500*(vcour->nd->x-minx)/(maxx-minx),500*(vcour->nd->y-miny)/(maxy-miny),500*(ncour->nd->x-minx)/(maxx-minx),500*(ncour->nd->y-miny)/(maxy-miny));
+        vcour=vcour->suiv;
+      }
+      ncour=ncour->suiv;
+    }
+    SVGfinalize(&svg);
 }
