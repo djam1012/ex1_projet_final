@@ -5,6 +5,7 @@
 #include <string.h>
 
 Noeud * creer_noeud(int num, double x, double y){
+  if (x<0||y<0) return NULL;
   Noeud * n = (Noeud *) malloc(sizeof(Noeud));
   n->num=num;
   n->x=x;
@@ -13,14 +14,18 @@ Noeud * creer_noeud(int num, double x, double y){
   return n;
 }
 
-CellNoeud* creer_CellNoeud(Noeud* n){
+CellNoeud* creer_CellNoeud(int num, double x, double y){
   CellNoeud *cn = (CellNoeud*)malloc(sizeof(CellNoeud));
-  cn->nd = n;
+  cn->nd = creer_noeud(num, x, y);
   cn->suiv = NULL;
   return cn;
 }
 
 void inserer_noeud_en_tete(CellNoeud** liste_noeud, int num, double x, double y){
+  if(num<0){
+    printf("nous n'insérerons pas ce noeud\n");
+    return;
+  }
   CellNoeud* nouv=(CellNoeud*)malloc(sizeof(CellNoeud));
   nouv->nd=creer_noeud(num, x, y);
   if (*liste_noeud==NULL){
@@ -52,6 +57,10 @@ void ajouter_voisin_en_queue(Noeud* noeud, CellNoeud* voisin){
 }
 
 void ajouter_voisin_noeud(Noeud* n1, Noeud* n2){
+  if (n2->num<0){
+    printf("nous ne prendrons pas en compte ce noeud\n");
+    return;
+  }
   if(!n2) return;
   if(!n1) n1 = n2;
   CellNoeud *temp = n1->voisins;
@@ -60,8 +69,28 @@ void ajouter_voisin_noeud(Noeud* n1, Noeud* n2){
     if (temp2->nd->num==n2->num) return;
     temp2=temp2->suiv;
   }
-  n1->voisins = creer_CellNoeud(n2);
+  n1->voisins = creer_CellNoeud(n2->num, n2->x, n2->y);
+  n1->voisins->nd->num=n2->num;
+  n1->voisins->nd->x=n2->x;
+  n1->voisins->nd->y=n2->y;
   n1->voisins->suiv = temp;
+}
+
+void lier_voisin(CellNoeud* n1, CellNoeud* n2){
+  if (n2->nd->num<0){
+    printf("nous ne prendrons pas en compte ce noeud\n");
+    return;
+  }
+  if(!n2||!n2->nd) return;
+  if(!n1||!n1->nd) n1 = n2;
+  CellNoeud* temp = n1->nd->voisins;
+  CellNoeud* temp2 = n1->nd->voisins;
+  while(temp2){
+    if (temp2->nd->num==n2->nd->num) return;
+    temp2=temp2->suiv;
+  }
+  n1->nd->voisins = creer_CellNoeud(n2->nd->num, n2->nd->x, n2->nd->y);
+  n1->nd->voisins->suiv = temp;
 }
 
 int recherche_noeud_liste(CellNoeud* liste_noeud, Noeud* n){
@@ -199,17 +228,16 @@ Reseau* reconstitueReseauListe(Chaines *C){
 
   CellNoeud* noeuds=(CellNoeud*)calloc(1,sizeof(CellNoeud));
   CellCommodite** commodites=(CellCommodite**)calloc(1,sizeof(CellCommodite*));
-  *commodites=(CellCommodite*)calloc(1,sizeof(CellCommodite));
   Reseau* res=creer_reseau(0, C->gamma, noeuds, *commodites);
   CellChaine* chaine_cour=C->chaines;
 
   while(chaine_cour){
     int nb_points=compter_points_chaine(chaine_cour);
     CellPoint* point_cour=chaine_cour->points;
-    CellNoeud* noeud=(CellNoeud*)calloc(1,sizeof(CellNoeud));
-    CellNoeud* premier_noeud=(CellNoeud*)calloc(1,sizeof(CellNoeud)); // premier noeud de la chaine
-    CellNoeud* dernier_noeud=(CellNoeud*)calloc(1,sizeof(CellNoeud)); // dernier noeud de la chaine
-    CellNoeud* suiv=(CellNoeud*)calloc(1,sizeof(CellNoeud));
+    CellNoeud* noeud=creer_CellNoeud(-1, -1, -1);
+    CellNoeud* premier_noeud=creer_CellNoeud(-1, -1, -1); // premier noeud de la chaine
+    CellNoeud* dernier_noeud=creer_CellNoeud(-1, -1, -1); // dernier noeud de la chaine
+    CellNoeud* suiv=creer_CellNoeud(-1, -1, -1);
     int i=1;
 
     while (point_cour){
@@ -223,16 +251,21 @@ Reseau* reconstitueReseauListe(Chaines *C){
       // ajout du précédent et du suivant de chaque noeud pour les voisins
       if (suiv && noeud && suiv->nd->num!=noeud->nd->num){
         if(!recherche_noeud_liste(noeud->nd->voisins,suiv->nd))
-          ajouter_voisin_noeud(suiv->nd, noeud->nd);
+          lier_voisin(suiv, noeud);
         if(!recherche_noeud_liste(suiv->nd->voisins, noeud->nd))
-          ajouter_voisin_noeud(noeud->nd, suiv->nd);
+          lier_voisin(noeud, suiv);
       }
       point_cour=point_cour->suiv;
       i++;
     }
     inserer_com_en_tete(&(res->commodites), premier_noeud->nd, dernier_noeud->nd);
     chaine_cour=chaine_cour->suiv;
+    free(noeud);
+    free(suiv);
+    free(premier_noeud);
+    free(dernier_noeud);
   }
+  free(commodites);
   return res;
 }
 
@@ -251,9 +284,11 @@ int nbLiaisons(Reseau* R){
   if(!R->nbNoeuds) return 0;
   int res=0;
   CellNoeud* temp=R->noeuds;
-  CellNoeud* deja_vu;
+  CellNoeud** deja_vu=(CellNoeud**)malloc(sizeof(CellNoeud*));
+  *deja_vu=creer_CellNoeud(-1, -1, -1);
+  (*deja_vu)->nd=creer_noeud(-1, -2, -2);
   while(temp->nd){
-    inserer_noeud_en_tete(&deja_vu, temp->nd->num, temp->nd->x, temp->nd->y);
+    inserer_noeud_en_tete(deja_vu, temp->nd->num, temp->nd->x, temp->nd->y);
     CellNoeud* voisin=temp->nd->voisins;
     while(voisin){
       res++;
@@ -261,6 +296,8 @@ int nbLiaisons(Reseau* R){
     }
     temp=temp->suiv;
   }
+  liberer_liste_noeuds(*deja_vu);
+  free(deja_vu);
   return res;
 }
 
@@ -282,10 +319,12 @@ void ecrireReseau(Reseau* R, FILE* f){
   }
   fprintf(f, "\n");
   CellNoeud* cour=R->noeuds;
-  CellNoeud* liste_noeud;
+  CellNoeud** liste_noeud=(CellNoeud**)malloc(sizeof(CellNoeud*));
+  *liste_noeud=creer_CellNoeud(-1, -1, -1);
+  (*liste_noeud)->nd=creer_noeud(-2, -3,-3);
   while(cour->suiv){
     Noeud* noeud_cour=cour->nd;
-    inserer_noeud_en_tete(&liste_noeud, noeud_cour->num, noeud_cour->x, noeud_cour->y);
+    inserer_noeud_en_tete(liste_noeud, noeud_cour->num, noeud_cour->x, noeud_cour->y);
     CellNoeud* voisin=cour->nd->voisins;
     while(voisin){
       if(recherche_noeud_liste(cour->nd->voisins,voisin->nd))
@@ -302,6 +341,8 @@ void ecrireReseau(Reseau* R, FILE* f){
     com_temp=com_temp->suiv;
     i++;
   }
+  liberer_liste_noeuds(*liste_noeud);
+  free(liste_noeud);
   fclose(f);
 }
 
@@ -335,4 +376,93 @@ void afficheReseauSVG(Reseau* R, char* nomInstance){
       ncour=ncour->suiv;
     }
     SVGfinalize(&svg);
+}
+
+void liberer_noeud(Noeud* n){
+  if (!n){
+    printf("ne peut pas libérer un noeud vide\n");
+    return;
+  }
+  if (n){
+    free(n);
+  }
+}
+
+void liberer_CellNoeud(CellNoeud* cn){
+  if (!cn){
+    printf("ne peut pas libérer un cellnoeud vide\n");
+    return;
+  }
+  liberer_noeud(cn->nd);
+  free(cn);
+}
+
+void liberer_voisins(Noeud* n){
+  if (!n) return;
+  if(n->voisins) {
+    CellNoeud* voisins = n->voisins;
+    CellNoeud *temp;
+    while (voisins){
+      temp = voisins;
+      voisins = voisins->suiv;
+      liberer_CellNoeud(temp);
+    }
+  }
+}
+
+void liberer_liste_noeuds(CellNoeud* noeuds){
+  if (!noeuds){
+    printf("la liste de noeuds est vide \n");
+    return;
+  }
+  CellNoeud* temp;
+  if (noeuds){
+    temp=noeuds->suiv;
+    liberer_noeud(noeuds->nd);
+    free(noeuds);
+    noeuds=temp;
+    liberer_liste_noeuds(noeuds);
+  }
+}
+
+void liberer_noeuds_et_voisins(CellNoeud* noeuds){
+  if (!noeuds){
+    printf("la liste de noeuds est vide \n");
+    return;
+  }
+  CellNoeud* temp;
+  if (noeuds){
+    temp=noeuds->suiv;
+    liberer_voisins(noeuds->nd);
+    liberer_noeud(noeuds->nd);
+    free(noeuds);
+    noeuds=temp;
+    liberer_noeuds_et_voisins(noeuds);
+  }
+}
+
+void liberer_liste_commodites(CellCommodite* commodites){
+  if (!commodites){
+    printf("la liste de commodites est vides \n");
+    return;
+  }
+  CellCommodite* cour;
+  if (commodites){
+    cour=commodites->suiv;
+    free(commodites);
+    commodites=cour;
+    liberer_liste_commodites(commodites);
+  }
+}
+
+void liberer_reseau(Reseau* r){
+  if (!r){
+    printf("le réseau est vide \n");
+    return;
+  } else {
+    liberer_noeuds_et_voisins(r->noeuds);
+    liberer_liste_commodites(r->commodites);
+    free(r);
+    printf("Réseau libéré.\n");
+  }
 }
