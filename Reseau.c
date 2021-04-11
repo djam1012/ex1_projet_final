@@ -43,8 +43,6 @@ void ajouter_voisin_en_queue(Noeud* noeud, CellNoeud* voisin){
   CellNoeud* temp=noeud->voisins;
   if (!temp){
     temp=nouv;
-    afficher_noeud(temp->nd);
-    afficher_noeud(voisin->nd);
     return;
   }
   while(temp){
@@ -191,22 +189,28 @@ void afficher_reseau(Reseau* r){
     printf("reseau vide\n");
     return;
   }
+  printf("\033[1;31m");
   printf("Voici le réseau de %d noeuds et de gamma %d:\n", r->nbNoeuds, r->gamma);
   printf("\n");
+  printf("\033[1;36m");
   printf("La liste des noeuds du réseau est:\n");
   CellNoeud* noeud_cour=r->noeuds; // on crée un noeud courant pour ne pas fausser la liste de noeuds
+  printf("\033[0;36m");
   while (noeud_cour->suiv != NULL){
     afficher_noeud(noeud_cour->nd);
     noeud_cour=noeud_cour->suiv;
   }
   printf("\n");
+  printf("\033[1;32m");
   printf("La liste des commodités du réseau est:\n");
   CellCommodite* com_cour=r->commodites;
+  printf("\033[0;32m");
   while (com_cour->suiv != NULL){
     afficher_commodite(com_cour);
     com_cour=com_cour->suiv;
   }
   printf("\n");
+  printf("\033[0;37m");
 }
 
 Noeud* rechercheCreeNoeudListe(Reseau *R, double x, double y){
@@ -361,13 +365,10 @@ void afficheReseauSVG(Reseau* R, char* nomInstance){
     SVGinit(&svg,nomInstance,500,500);
     ncour=R->noeuds;
     while (ncour->suiv){
-      printf("      VOISINS DE ");
-      afficher_noeud(ncour->nd);
       SVGlineRandColor(&svg);
       SVGpoint(&svg,500*(ncour->nd->x-minx)/(maxx-minx),500*(ncour->nd->y-miny)/(maxy-miny));
       CellNoeud* vcour=ncour->nd->voisins;
       while (vcour){
-        afficher_noeud(vcour->nd);
         SVGlineRandColor(&svg);
         SVGpoint(&svg,500*(ncour->nd->x-minx)/(maxx-minx),500*(ncour->nd->y-miny)/(maxy-miny));
         SVGline(&svg,500*(vcour->nd->x-minx)/(maxx-minx),500*(vcour->nd->y-miny)/(maxy-miny),500*(ncour->nd->x-minx)/(maxx-minx),500*(ncour->nd->y-miny)/(maxy-miny));
@@ -380,7 +381,6 @@ void afficheReseauSVG(Reseau* R, char* nomInstance){
 
 void liberer_noeud(Noeud* n){
   if (!n){
-    printf("ne peut pas libérer un noeud vide\n");
     return;
   }
   if (n){
@@ -390,7 +390,6 @@ void liberer_noeud(Noeud* n){
 
 void liberer_CellNoeud(CellNoeud* cn){
   if (!cn){
-    printf("ne peut pas libérer un cellnoeud vide\n");
     return;
   }
   liberer_noeud(cn->nd);
@@ -412,7 +411,6 @@ void liberer_voisins(Noeud* n){
 
 void liberer_liste_noeuds(CellNoeud* noeuds){
   if (!noeuds){
-    printf("la liste de noeuds est vide \n");
     return;
   }
   CellNoeud* temp;
@@ -427,7 +425,6 @@ void liberer_liste_noeuds(CellNoeud* noeuds){
 
 void liberer_noeuds_et_voisins(CellNoeud* noeuds){
   if (!noeuds){
-    printf("la liste de noeuds est vide \n");
     return;
   }
   CellNoeud* temp;
@@ -443,7 +440,6 @@ void liberer_noeuds_et_voisins(CellNoeud* noeuds){
 
 void liberer_liste_commodites(CellCommodite* commodites){
   if (!commodites){
-    printf("la liste de commodites est vides \n");
     return;
   }
   CellCommodite* cour;
@@ -457,7 +453,6 @@ void liberer_liste_commodites(CellCommodite* commodites){
 
 void liberer_reseau(Reseau* r){
   if (!r){
-    printf("le réseau est vide \n");
     return;
   } else {
     liberer_noeuds_et_voisins(r->noeuds);
