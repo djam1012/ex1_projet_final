@@ -35,8 +35,10 @@ int main(int argc, char const *argv[]) {
   afficher_liste_chaines(*pointeur_chaines);
 
   afficheChainesSVG(*pointeur_chaines, "chaines1");
-  printf("longueur totale %f\n", longueurTotale(*pointeur_chaines));
-  printf("nombre de total de points %d\n", comptePointsTotal(*pointeur_chaines));
+  printf("\033[1;36m");
+  printf("LONGUEUR TOTALE DE LA CHAINE:   %f\n", longueurTotale(*pointeur_chaines));
+  printf("NOMBRE TOTAL DE POINTS:         %d\n", comptePointsTotal(*pointeur_chaines));
+  printf("\033[0;37m");
 
 
   liberer_liste_chaines(*pointeur_chaines);
