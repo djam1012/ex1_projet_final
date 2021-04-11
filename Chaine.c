@@ -44,7 +44,6 @@ void inserer_chaine_en_tete(CellChaine** liste_chaine, int numero, CellPoint* li
 
 void liberer_points(CellPoint* points){
   if (!points){
-    printf("La liste de points est vide.\n");
     return;
   }
   CellPoint* cour;
@@ -58,7 +57,6 @@ void liberer_points(CellPoint* points){
 
 void liberer_chaine(CellChaine* chaine){
   if (!chaine){
-    printf("La liste de chaines est vide.\n");
     return;
   }
   CellChaine* cour;
@@ -78,10 +76,12 @@ void afficher_points(CellPoint* liste_points){
   }
   CellPoint* cour=liste_points;
   while(cour){
+    printf("\033[0;33m");
     printf("Point de coodonnées %.2f et %.2f.\n", cour->x, cour->y);
     if(liste_points->suiv==NULL) return;
     cour=cour->suiv;
   }
+  printf("\033[0;37m");
   printf("\n");
 }
 
@@ -92,7 +92,9 @@ void afficher_chaine(CellChaine* liste_chaine){
   }
   CellChaine* cour=liste_chaine;
   while(cour){
+    printf("\033[1;33m");
     printf("Chaine numéro: %d avec les points:\n", cour->numero);
+    printf("\033[0;37m");
     afficher_points(cour->points);
     if(liste_chaine->suiv==NULL) return;
     cour=cour->suiv;
@@ -105,13 +107,15 @@ void afficher_liste_chaines(Chaines* liste_chaines){
     printf("Les chaines sont vides.\n");
     return;
   }
+  printf("\033[1;32m");
   printf("Gamma: %d, Nombre de chaines: %d, Liste des chaines:\n", liste_chaines->gamma, liste_chaines->nbChaines);
+  printf("\n");
+  printf("\033[0;37m");
   afficher_chaine(liste_chaines->chaines);
 }
 
 void liberer_liste_chaines(Chaines* liste_chaines){
   if (!liste_chaines){
-    printf("Les chaines sont vides.\n");
     return;
   }
   liberer_chaine(liste_chaines->chaines);
@@ -230,7 +234,7 @@ Chaines* lectureChaines(FILE *f){
 void ecrireChaines(Chaines *C, FILE *f){
 
   // on vérifie que la structure ou les chaines qu'elle contient ne sont pas vides
-  if (!C&&!C->chaines){
+  if (!C||!C->chaines){
     printf("La chaine est vide, on ne peut pas la parcourir.\n");
     return;
   }
