@@ -33,7 +33,10 @@ typedef struct {
 } Reseau;
 
 void inserer_noeud_en_tete(CellNoeud** liste_noeud, int num, double x, double y);
+void ajouter_CellNoeud_en_tete(CellNoeud** liste_noeud, CellNoeud* cn);
+void ajouter_noeud_en_tete(CellNoeud** liste_noeud, Noeud* n);
 Noeud * creer_noeud(int num, double x, double y);
+void ajouter_voisin_noeud(Noeud* n1, Noeud* n2);
 void inserer_com_en_tete (CellCommodite** liste_com, Noeud* extrA, Noeud* extrB);
 CellCommodite* creer_commodite(Noeud* extrA, Noeud* extrB);
 Reseau * creer_reseau(int nbNoeuds, int gamma, CellNoeud* noeuds, CellCommodite* commodites);
@@ -55,6 +58,8 @@ void liberer_liste_noeuds(CellNoeud* noeuds);
 void liberer_noeuds_et_voisins(CellNoeud* noeuds);
 void liberer_voisins(Noeud* n);
 void liberer_noeud(Noeud* n);
+void liberer_CellNoeud(CellNoeud* cn);
+CellNoeud* coller_noeud(Noeud* n);
 
 Noeud* rechercheCreeNoeudListe(Reseau *R, double x, double y);
 Reseau* reconstitueReseauListe(Chaines *C);
@@ -62,4 +67,7 @@ void ecrireReseau(Reseau *R, FILE *f);
 int nbLiaisons(Reseau *R);
 int nbCommodites(Reseau *R);
 void afficheReseauSVG(Reseau *R, char* nomInstance);
+
+
+
 #endif
