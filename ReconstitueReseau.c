@@ -3,32 +3,87 @@
 #include <string.h>
 #include "Chaine.h"
 #include "Reseau.h"
+#include "ArbreQuat.h"
 #include "SVGwriter.h"
+#include "Hachage.h"
+#define M 80
 
 void methode_liste(Chaines* C){
   Reseau* R = reconstitueReseauListe(C);
   afficher_reseau(R);
+  afficher_voisins_reseau(R);
 
   printf("\n");
   printf("\033[1;33m");
   printf("NOMBRE DE COMMODITES DU RESEAU : %d\n", nbCommodites(R));
   printf("NOMBRE DE LIAISONS DU RESEAU : %d\n", nbLiaisons(R));
-  printf("\033[0;37m");
+  printf("\033[1;39m");
 
-
-  ecrireReseau(R, NULL);
-  afficheReseauSVG(R, "reseau_affiche");
+  FILE* f=fopen("reseau_affiche_liste.res", "w");
+  if (!f){
+    printf("Problème lors de la lecture du fichier\n");
+    fclose(f);
+    return;
+  }
+  ecrireReseau(R, f);
+  afficheReseauSVG(R, "reseau_affiche_liste");
   liberer_reseau(R);
 }
 
 void methode_table(Chaines* C){
 
-  return;
+   //test des clés générées
+    int i=0;
+    int j=0;
+    printf("-----Test des clefs générées -----\n");
+
+    for (i=0;i<=10;i++){
+        for(j=0;j<=10;j++){
+            printf("%d   ",fonctionClef(i,j));
+        }
+    }
+    printf("\n");
+
+  Reseau *R = reconstitueReseauHachage(C,M); // le réseau est affiché dans la fonction
+/*  afficher_voisins_reseau(R);
+
+  printf("\n");
+  printf("\033[1;33m");
+  printf("NOMBRE DE COMMODITES DU RESEAU : %d\n", nbCommodites(R));
+  printf("NOMBRE DE LIAISONS DU RESEAU : %d\n", nbLiaisons(R));
+  printf("\033[1;39m");
+
+  FILE* f=fopen("reseau_affiche_table.res", "w");
+  if (!f){
+    printf("Problème lors de la lecture du fichier\n");
+    fclose(f);
+    return;
+  }
+  ecrireReseau(R, f);
+  afficheReseauSVG(R, "reseau_affiche_table");*/
+  liberer_reseau(R);
 }
 
 void methode_arbre(Chaines* C){
+  Reseau* R = reconstitueReseauArbre(C);
+  /*afficher_reseau(R);
+  afficher_voisins_reseau(R);
 
-  return;
+  printf("\n");
+  printf("\033[1;33m");
+  printf("NOMBRE DE COMMODITES DU RESEAU : %d\n", nbCommodites(R));
+  printf("NOMBRE DE LIAISONS DU RESEAU : %d\n", nbLiaisons(R));
+  printf("\033[1;39m");
+
+  FILE* f=fopen("reseau_affiche_arbre.res", "w");
+  if (!f){
+    printf("Problème lors de la lecture du fichier\n");
+    fclose(f);
+    return;
+  }
+  ecrireReseau(R, f);
+  afficheReseauSVG(R, "reseau_affiche_arbre");*/
+  liberer_reseau(R);
 }
 
 int main(int argc, char const *argv[]) {
@@ -68,7 +123,7 @@ int main(int argc, char const *argv[]) {
   printf("-1 : par liste chaînée\n");
   printf("-2 : par table de hachage\n");
   printf("-3 : par arbre\n");
-  printf("\033[0;37m");
+  printf("\033[1;39m");
   int val;
   int lire=scanf("%d", &val);
 
