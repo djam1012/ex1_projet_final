@@ -21,6 +21,12 @@ CellNoeud* creer_CellNoeud(int num, double x, double y){
   return cn;
 }
 
+CellNoeud* coller_noeud(Noeud* n){
+  CellNoeud* cn = (CellNoeud*)malloc(sizeof(CellNoeud));
+  cn->nd=n;
+  cn->suiv=NULL;
+}
+
 void inserer_noeud_en_tete(CellNoeud** liste_noeud, int num, double x, double y){
   if(num<0){
     printf("nous n'insérerons pas ce noeud\n");
@@ -33,6 +39,33 @@ void inserer_noeud_en_tete(CellNoeud** liste_noeud, int num, double x, double y)
   } else {
     nouv->suiv=*liste_noeud;
     *liste_noeud=nouv;
+  }
+}
+
+void ajouter_CellNoeud_en_tete(CellNoeud** liste_noeud, CellNoeud* cn){
+  if(cn->nd->num<0){
+    printf("nous n'insérerons pas ce noeud\n");
+    return;
+  }
+  if (*liste_noeud==NULL){
+    *liste_noeud=cn;
+  } else {
+    cn->suiv=*liste_noeud;
+    *liste_noeud=cn;
+  }
+}
+
+void ajouter_noeud_en_tete(CellNoeud** liste_noeud, Noeud* n){
+  if(n->num<0){
+    printf("nous n'insérerons pas ce noeud\n");
+    return;
+  }
+  CellNoeud* cn = coller_noeud(n);
+  if (*liste_noeud==NULL){
+    *liste_noeud=cn;
+  } else {
+    cn->suiv=*liste_noeud;
+    *liste_noeud=cn;
   }
 }
 
@@ -87,6 +120,7 @@ void lier_voisin(CellNoeud* n1, CellNoeud* n2){
     if (temp2->nd->num==n2->nd->num) return;
     temp2=temp2->suiv;
   }
+  // insertion en tete
   n1->nd->voisins = creer_CellNoeud(n2->nd->num, n2->nd->x, n2->nd->y);
   n1->nd->voisins->suiv = temp;
 }
@@ -205,12 +239,12 @@ void afficher_reseau(Reseau* r){
   printf("La liste des commodités du réseau est:\n");
   CellCommodite* com_cour=r->commodites;
   printf("\033[0;32m");
-  while (com_cour->suiv != NULL){
+  while (com_cour){
     afficher_commodite(com_cour);
     com_cour=com_cour->suiv;
   }
   printf("\n");
-  printf("\033[0;37m");
+  printf("\033[1;39m");
 }
 
 Noeud* rechercheCreeNoeudListe(Reseau *R, double x, double y){
@@ -231,8 +265,7 @@ Noeud* rechercheCreeNoeudListe(Reseau *R, double x, double y){
 Reseau* reconstitueReseauListe(Chaines *C){
 
   CellNoeud* noeuds=(CellNoeud*)calloc(1,sizeof(CellNoeud));
-  CellCommodite** commodites=(CellCommodite**)calloc(1,sizeof(CellCommodite*));
-  Reseau* res=creer_reseau(0, C->gamma, noeuds, *commodites);
+  Reseau* res=creer_reseau(0, C->gamma, noeuds, NULL);
   CellChaine* chaine_cour=C->chaines;
 
   while(chaine_cour){
@@ -254,8 +287,10 @@ Reseau* reconstitueReseauListe(Chaines *C){
 
       // ajout du précédent et du suivant de chaque noeud pour les voisins
       if (suiv && noeud && suiv->nd->num!=noeud->nd->num){
+        printf("voisins 1\n");
         if(!recherche_noeud_liste(noeud->nd->voisins,suiv->nd))
           lier_voisin(suiv, noeud);
+        printf("voisins 2\n");
         if(!recherche_noeud_liste(suiv->nd->voisins, noeud->nd))
           lier_voisin(noeud, suiv);
       }
@@ -269,14 +304,13 @@ Reseau* reconstitueReseauListe(Chaines *C){
     free(premier_noeud);
     free(dernier_noeud);
   }
-  free(commodites);
   return res;
 }
 
 int nbCommodites(Reseau* R){
   int res=0;
   CellCommodite* temp=R->commodites;
-  while (temp->suiv){
+  while (temp){
     res++;
     temp=temp->suiv;
   }
@@ -306,12 +340,6 @@ int nbLiaisons(Reseau* R){
 }
 
 void ecrireReseau(Reseau* R, FILE* f){
-  f=fopen("Reseau1.res", "w");
-  if (!f){
-    printf("Problème lors de la lecture du fichier\n");
-    fclose(f);
-    return;
-  }
   fprintf(f, "NbNoeuds: %d\nNbLiaisons: %d\nNbCommodites: %d\nGamma: %d\n\n",
           R->nbNoeuds, nbLiaisons(R), nbCommodites(R), R->gamma);
   int i=0;
@@ -351,41 +379,36 @@ void ecrireReseau(Reseau* R, FILE* f){
 }
 
 void afficheReseauSVG(Reseau* R, char* nomInstance){
-    int i;
-    double maxx=0,maxy=0,minx=1e6,miny=1e6;
-    CellNoeud *ncour=R->noeuds;
-    SVGwriter svg;
-    while (ncour->suiv){
-      if (maxx<ncour->nd->x) maxx=ncour->nd->x;
-      if (maxy<ncour->nd->y) maxy=ncour->nd->y;
-      if (minx>ncour->nd->x) minx=ncour->nd->x;
-      if (miny>ncour->nd->y) miny=ncour->nd->y;
-      ncour=ncour->suiv;
-    }
-    SVGinit(&svg,nomInstance,500,500);
-    ncour=R->noeuds;
-    while (ncour->suiv){
+  int i;
+  double maxx=0,maxy=0,minx=1e6,miny=1e6;
+  CellNoeud *ncour=R->noeuds;
+  SVGwriter svg;
+  while (ncour->suiv){
+    if (maxx<ncour->nd->x) maxx=ncour->nd->x;
+    if (maxy<ncour->nd->y) maxy=ncour->nd->y;
+    if (minx>ncour->nd->x) minx=ncour->nd->x;
+    if (miny>ncour->nd->y) miny=ncour->nd->y;
+    ncour=ncour->suiv;
+  }
+  SVGinit(&svg,nomInstance,500,500);
+  ncour=R->noeuds;
+  while (ncour->suiv){
+    SVGlineRandColor(&svg);
+    SVGpoint(&svg,500*(ncour->nd->x-minx)/(maxx-minx),500*(ncour->nd->y-miny)/(maxy-miny));
+    CellNoeud* vcour=ncour->nd->voisins;
+    while (vcour){
       SVGlineRandColor(&svg);
       SVGpoint(&svg,500*(ncour->nd->x-minx)/(maxx-minx),500*(ncour->nd->y-miny)/(maxy-miny));
-      CellNoeud* vcour=ncour->nd->voisins;
-      while (vcour){
-        SVGlineRandColor(&svg);
-        SVGpoint(&svg,500*(ncour->nd->x-minx)/(maxx-minx),500*(ncour->nd->y-miny)/(maxy-miny));
-        SVGline(&svg,500*(vcour->nd->x-minx)/(maxx-minx),500*(vcour->nd->y-miny)/(maxy-miny),500*(ncour->nd->x-minx)/(maxx-minx),500*(ncour->nd->y-miny)/(maxy-miny));
-        vcour=vcour->suiv;
-      }
-      ncour=ncour->suiv;
+      SVGline(&svg,500*(vcour->nd->x-minx)/(maxx-minx),500*(vcour->nd->y-miny)/(maxy-miny),500*(ncour->nd->x-minx)/(maxx-minx),500*(ncour->nd->y-miny)/(maxy-miny));
+      vcour=vcour->suiv;
     }
-    SVGfinalize(&svg);
+    ncour=ncour->suiv;
+  }
+  SVGfinalize(&svg);
 }
 
 void liberer_noeud(Noeud* n){
-  if (!n){
-    return;
-  }
-  if (n){
-    free(n);
-  }
+  if (n) free(n);
 }
 
 void liberer_CellNoeud(CellNoeud* cn){
@@ -416,8 +439,7 @@ void liberer_liste_noeuds(CellNoeud* noeuds){
   CellNoeud* temp;
   if (noeuds){
     temp=noeuds->suiv;
-    liberer_noeud(noeuds->nd);
-    free(noeuds);
+    liberer_CellNoeud(noeuds);
     noeuds=temp;
     liberer_liste_noeuds(noeuds);
   }
@@ -431,8 +453,7 @@ void liberer_noeuds_et_voisins(CellNoeud* noeuds){
   if (noeuds){
     temp=noeuds->suiv;
     liberer_voisins(noeuds->nd);
-    liberer_noeud(noeuds->nd);
-    free(noeuds);
+    liberer_CellNoeud(noeuds);
     noeuds=temp;
     liberer_noeuds_et_voisins(noeuds);
   }
