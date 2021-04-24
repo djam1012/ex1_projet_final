@@ -35,6 +35,7 @@ void chaineCoordMinMax(Chaines* C, double* xmin, double* ymin, double* xmax, dou
 
 ArbreQuat* creerArbreQuat(double xc, double yc, double coteX, double coteY){
   ArbreQuat* aq=(ArbreQuat*)malloc(sizeof(ArbreQuat));
+  if (!aq) return NULL;
   aq->xc=xc;
   aq->yc=yc;
   aq->coteX=coteX;
@@ -60,32 +61,26 @@ void liberer_aq(ArbreQuat* aq){
 void insererNoeudArbre(Noeud* n, ArbreQuat** a, ArbreQuat* parent){
   if(!(*a)){
     *a = creerArbreQuat(0, 0, parent->coteX/2, parent->coteY/2);
-    (*a)->noeud = n; // on y place le noeud à ajouter
-    double x = n->x;
-    double y = n->y;
-    double xc = parent->xc;
-    double yc = parent->yc;
-    double CX = (*a)->coteX;
-    double CY = (*a)->coteY;
+    (*a)->noeud = n;
 
-    if( x < xc && y < yc ){
-        (*a)->xc = xc - ( CX / 2 );
-        (*a)->yc = yc - ( CY / 2 );
+    if(n->x < parent->xc && n->y < parent->yc){
+        (*a)->xc = parent->xc - ((*a)->coteX/2);
+        (*a)->yc =parent->yc - ((*a)->coteY/2);
     }
 
-    else if ( x >= xc && y < yc ){
-        (*a)->xc = xc + ( CX / 2 ) ;
-        (*a)->yc = yc - ( CY / 2 );
+    else if (n->x >= parent->xc && n->y < parent->yc){
+        (*a)->xc = parent->xc + ((*a)->coteX/2);
+        (*a)->yc =parent->yc - ((*a)->coteY/2);
     }
 
-    else if( x < xc && y >= yc ){
-        (*a)->xc = xc - ( CX / 2 );
-        (*a)->yc = yc + ( CY / 2 );
+    else if(n->x < parent->xc && n->y >= parent->yc){
+        (*a)->xc = parent->xc - ((*a)->coteX/2);
+        (*a)->yc =parent->yc + ((*a)->coteY/2);
     }
 
-    else if( x >= xc && y >= yc ){
-        (*a)->xc = xc + ( CX / 2 );
-        (*a)->yc = yc + ( CY / 2 );
+    else if(n->x >= parent->xc && n->y >= parent->yc){
+        (*a)->xc = parent->xc + ((*a)->coteX/2);
+        (*a)->yc =parent->yc + ((*a)->coteY/2);
     }
   }
 
@@ -143,7 +138,7 @@ Noeud* rechercheCreeNoeudArbre(Reseau* R, ArbreQuat** a, ArbreQuat* parent, doub
     insererNoeudArbre(nouv, a, parent);
     ajouter_noeud_en_tete(&(R->noeuds), nouv);
     R->nbNoeuds += 1;
-
+    afficher_noeud(nouv);
     return nouv;
   }
   else if ((*a)->noeud){
@@ -154,21 +149,22 @@ Noeud* rechercheCreeNoeudArbre(Reseau* R, ArbreQuat** a, ArbreQuat* parent, doub
     insererNoeudArbre(nouv, a, parent);
     ajouter_noeud_en_tete(&(R->noeuds), nouv);
     R->nbNoeuds += 1;
+    afficher_noeud(nouv);
     return nouv;
   }
   else if (*a && !(*a)->noeud){
     // sud-ouest
     if (x < (*a)->xc && y < (*a)->yc)
-      rechercheCreeNoeudArbre(R, &((*a)->so), parent, x, y);
+      return rechercheCreeNoeudArbre(R, &((*a)->so), parent, x, y);
     // sud-est
     if (x >= (*a)->xc && y < (*a)->yc)
-      rechercheCreeNoeudArbre(R, &((*a)->se), parent, x, y);
+      return rechercheCreeNoeudArbre(R, &((*a)->se), parent, x, y);
     // nord-ouest
     if (x < (*a)->xc && y >= (*a)->yc)
-      rechercheCreeNoeudArbre(R, &((*a)->no), parent, x, y);
+      return rechercheCreeNoeudArbre(R, &((*a)->no), parent, x, y);
     // nord-est
     if (x >= (*a)->xc && y >= (*a)->yc)
-      rechercheCreeNoeudArbre(R, &((*a)->ne), parent, x, y);
+      return rechercheCreeNoeudArbre(R, &((*a)->ne), parent, x, y);
   }
 }
 
@@ -178,25 +174,28 @@ Reseau* reconstitueReseauArbre(Chaines* C){
   CellChaine* chaine_cour=C->chaines;
   double xmin, ymin, xmax, ymax;
   chaineCoordMinMax(C, &xmin, &ymin, &xmax, &ymax);
-  ArbreQuat *parent = creerArbreQuat(xmin*2, ymin*2, xmax*2, ymax*2);
+
+  ArbreQuat *parent = creerArbreQuat(xmin, ymin, xmax*2, ymax*2);
 
   while(chaine_cour){
     int nb_points=compter_points_chaine(chaine_cour);
     CellPoint* point_cour=chaine_cour->points;
     CellNoeud* noeud=creer_CellNoeud(-1, -1, -1);
     CellNoeud* suiv=creer_CellNoeud(-1, -1, -1);
-    CellNoeud* premier_noeud; // premier noeud de la chaine
-    CellNoeud* dernier_noeud; // dernier noeud de la chaine
+    CellNoeud* premier_noeud=creer_CellNoeud(-1, -1, -1); // premier noeud de la chaine
+    CellNoeud* dernier_noeud=creer_CellNoeud(-1, -1, -1); // dernier noeud de la chaine
 
     int i=1;
 
     while (point_cour){
       noeud->nd=rechercheCreeNoeudArbre(res, &parent, parent, point_cour->x, point_cour->y);
+      printf("        ");
+      afficher_noeud(noeud->nd);
       if (point_cour->suiv) suiv->nd=rechercheCreeNoeudArbre(res, &parent, parent, point_cour->suiv->x, point_cour->suiv->y);
       noeud->suiv=suiv;
 
-      if (i==1) premier_noeud=noeud;
-      if (i==nb_points) dernier_noeud=noeud;
+      if (i==1) premier_noeud->nd=noeud->nd;
+      if (i==nb_points) dernier_noeud->nd=noeud->nd;
 
       // ajout du précédent et du suivant de chaque noeud pour les voisins
       if (suiv && noeud && suiv->nd->num!=noeud->nd->num){
@@ -208,14 +207,13 @@ Reseau* reconstitueReseauArbre(Chaines* C){
       point_cour=point_cour->suiv;
       i++;
     }
-    afficher_noeud(premier_noeud->nd);
-    afficher_noeud(dernier_noeud->nd);
     inserer_com_en_tete(&(res->commodites), premier_noeud->nd, dernier_noeud->nd);
     chaine_cour=chaine_cour->suiv;
     free(noeud);
     free(suiv);
+    free(premier_noeud);
+    free(dernier_noeud);
   }
-  //afficher_aq(parent);
   afficher_reseau(res);
   afficher_voisins_reseau(res);
 
