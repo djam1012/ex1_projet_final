@@ -19,31 +19,30 @@ TableHachage* creer_table_h(int m){
 }
 
 void liberer_table_hachage(TableHachage* th){
-  if (!th) return;
+  if (th==NULL) return;
+  if (th->tab==NULL) return;
   for (int i=0; i<th->m; i++){
-    if (!(th->tab)[i]) continue;
-    liberer_liste_noeuds((th->tab)[i]);
+    if (th->tab[i]!=NULL)
+      liberer_liste_noeuds_vides(th->tab[i]);
   }
   free(th->tab);
   free(th);
 }
 
-void inserer_noeud_h(TableHachage* t, int num, double x, double y){
-   // on trouve dans quelle case de la table de hachage on insère le noeudh
-  int i =fonctionHachage(fonctionClef(x,y),t->m);
-  CellNoeud* liste_n = (t->tab)[i];
-  Noeud* cour =liste_n->nd;
+void inserer_noeud_h(TableHachage* t, int i, Noeud* n){
+  // on insère le noeud dans la case i de la table de hachage
+  CellNoeud* cn = (t->tab)[i];
+  Noeud* cour = cn->nd;
   if(!(t->tab)[i]){
-    // on insère le noeudh à cette case si elle est vide
-    (t->tab)[i]->nd=creer_noeud(num,x,y);
-  }else{
-     // sinon on l'insère par chainage avec le noeudh déjà présent ou celui d'après etc.
-    while (liste_n->suiv) liste_n=liste_n->suiv;
-      Noeud * nn = creer_noeud(num,x,y);
-      inserer_noeud_en_tete(&liste_n,num,x,y);
+    // on insère le noeud à cette case si elle est vide
+    (t->tab)[i]->nd=n;
+  } else {
+     // sinon on l'insère par chainage avec le noeud déjà présent ou celui d'après etc.
+    while (cn->suiv) cn=cn->suiv;
+    Noeud * nn = n;
+    ajouter_noeud_en_tete(&cn,n);
     }
    t->nbe++;
-
 }
 
 int fonctionClef(int x,int y){
@@ -75,7 +74,7 @@ int recherche_noeud_h(TableHachage* H, Noeud* n){
 Noeud* rechercheCreeNoeudHachage(Reseau* R, TableHachage* H, double x, double y) {
   int ind=fonctionHachage(fonctionClef(x,y),H->m);
   CellNoeud* cour=(H->tab)[ind];
-  while (cour){
+  while (cour!=NULL){
     if (cour->nd->x == x && cour->nd->y == y)
       return cour->nd;
     cour=cour->suiv;
@@ -86,8 +85,9 @@ Noeud* rechercheCreeNoeudHachage(Reseau* R, TableHachage* H, double x, double y)
   // ajout du noeud dans le reseau
   ajouter_noeud_en_tete(&(R->noeuds), cnh->nd);
   // ajout du noeud dans la table de hachage
-  cnh->suiv=H->tab[ind];
-  H->tab[ind]=cnh; // ajout en tete
+  ajouter_CellNoeud_en_tete(&(H->tab[ind]), cnh);
+  /*cnh->suiv=H->tab[ind];
+  H->tab[ind]=cnh; // ajout en tete*/
 
   H->nbe++;
   R->nbNoeuds++;
@@ -135,7 +135,7 @@ Reseau* reconstitueReseauHachage(Chaines *C, int m){
     free(premier_noeud);
     free(dernier_noeud);
   }
-  afficher_table(h);
+  /*afficher_table(h);
   printf("nb elt table %d\n", h->nbe);
   afficher_reseau(res);
   afficher_voisins_reseau(res);
@@ -153,8 +153,8 @@ Reseau* reconstitueReseauHachage(Chaines *C, int m){
     return NULL;
   }
   ecrireReseau(res, f);
-  afficheReseauSVG(res, "reseau_affiche_table");
-  //liberer_table_hachage(h);
+  afficheReseauSVG(res, "reseau_affiche_table");*/
+  liberer_table_hachage(h);
   return res;
 }
 
