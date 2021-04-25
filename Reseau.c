@@ -44,7 +44,6 @@ void inserer_noeud_en_tete(CellNoeud** liste_noeud, int num, double x, double y)
 
 void ajouter_CellNoeud_en_tete(CellNoeud** liste_noeud, CellNoeud* cn){
   if(cn->nd->num<0){
-    printf("nous n'insérerons pas ce noeud\n");
     return;
   }
   if (*liste_noeud==NULL){
@@ -70,7 +69,7 @@ void ajouter_noeud_en_tete(CellNoeud** liste_noeud, Noeud* n){
 }
 
 void ajouter_voisin_en_queue(Noeud* noeud, CellNoeud* voisin){
-  if (!noeud) return;
+  if (noeud==NULL) return;
   if (!voisin->nd) return;
   CellNoeud* nouv=voisin;
   CellNoeud* temp=noeud->voisins;
@@ -166,7 +165,7 @@ void afficher_noeud(Noeud* n){
     printf("noeud vide\n");
     return;
   }
-  printf("Noeud numéro %d: (%.2f, %.2f)\n", n->num, n->x, n->y);
+  printf("Noeud %d: (%.2f, %.2f)\n", n->num, n->x, n->y);
 }
 
 void afficher_liste_noeuds(CellNoeud* cn){
@@ -287,10 +286,8 @@ Reseau* reconstitueReseauListe(Chaines *C){
 
       // ajout du précédent et du suivant de chaque noeud pour les voisins
       if (suiv && noeud && suiv->nd->num!=noeud->nd->num){
-        printf("voisins 1\n");
         if(!recherche_noeud_liste(noeud->nd->voisins,suiv->nd))
           lier_voisin(suiv, noeud);
-        printf("voisins 2\n");
         if(!recherche_noeud_liste(suiv->nd->voisins, noeud->nd))
           lier_voisin(noeud, suiv);
       }
@@ -408,7 +405,8 @@ void afficheReseauSVG(Reseau* R, char* nomInstance){
 }
 
 void liberer_noeud(Noeud* n){
-  if (n) free(n);
+  if (n!=NULL) free(n);
+  n=NULL;
 }
 
 void liberer_CellNoeud(CellNoeud* cn){
@@ -417,6 +415,7 @@ void liberer_CellNoeud(CellNoeud* cn){
   }
   liberer_noeud(cn->nd);
   free(cn);
+  cn=NULL;
 }
 
 void liberer_voisins(Noeud* n){
@@ -442,6 +441,19 @@ void liberer_liste_noeuds(CellNoeud* noeuds){
     liberer_CellNoeud(noeuds);
     noeuds=temp;
     liberer_liste_noeuds(noeuds);
+  }
+}
+
+void liberer_liste_noeuds_vides(CellNoeud* noeuds){
+  if (!noeuds){
+    return;
+  }
+  CellNoeud* temp;
+  if (noeuds){
+    temp=noeuds->suiv;
+    free(noeuds);
+    noeuds=temp;
+    liberer_liste_noeuds_vides(noeuds);
   }
 }
 
